@@ -1,0 +1,31 @@
+{
+	"name": "Data Resolution Workflow Tweaks",
+
+	"namespace": "MCRI\\DRWTweaks",
+
+	"authors": [
+		{
+			"name": "Luke Stevens",
+			"email": "luke.stevens@mcri.edu.au",
+			"institution": "Murdoch Children's Research Institute"
+		}
+	],
+
+	"description": "Provides some enhancements to REDCap's Data Resolution Workflow functionality, namely: <ul><li>Adds a button to data entry forms that will do the "verified value" step for all fields not yet verified or queried.</li><li>CSV exports have all data in separate columns (rather than combining, for example, username and comments).</li></ul>",
+
+	"permissions": [
+        "redcap_data_entry_form_top",
+        "redcap_every_page_top"
+    ],
+
+    "enable-every-page-hooks-on-system-pages": false,
+
+	"links": {
+	},
+
+	"system-settings": [
+	],
+	
+	"project-settings": [
+	]
+}
