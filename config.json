@@ -15,6 +15,7 @@
 
     "permissions": [
         "redcap_data_entry_form_top",
+        "redcap_every_page_top",
         "redcap_every_page_before_render"
     ],
 
@@ -28,6 +29,13 @@
 
     "project-settings": [
         {
+            "key": "disable-reassign-user",
+            "name": "Disable \"Reassign user\" function",
+            "required": false,
+            "type": "checkbox",
+            "repeatable": false
+        }, 
+        {
             "key": "disable-verify-all",
             "name": "Disable \"Verify all\" function",
             "required": false,
@@ -36,7 +44,7 @@
         }, 
         {
             "key": "disable-csv-export",
-            "name": "Disable CSV export alterations",
+            "name": "Disable CSV export alterations<br>(This tweak has no effect from REDCap v9.5.1 when the separation of data into distinct columns was implemented as a core feature.)",
             "required": false,
             "type": "checkbox",
             "repeatable": false
