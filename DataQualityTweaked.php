@@ -3,7 +3,9 @@
 **  REDCap is only available through a license agreement with Vanderbilt University
 ******************************************************************************************/
 
-require_once APP_PATH_DOCROOT . 'ProjectGeneral/math_functions.php';
+if (version_compare(REDCAP_VERSION, '10.0.1')<0) {
+		require_once APP_PATH_DOCROOT . 'ProjectGeneral/math_functions.php'; // from 10.0.1 these functions are in init_functions.php which is included on init
+}
 
 // namespace MCRI\DRWTweaks; // best not to do this so do not have to prepend \ to all class references in methods here
 

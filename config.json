@@ -36,7 +36,7 @@
         }, 
         {
             "key": "disable-csv-export",
-            "name": "Disable CSV export alterations",
+            "name": "Disable CSV export alterations<br>(This tweak has no effect from REDCap v9.5.1 when the separation of data into distinct columns was implemented as standard behaviour.)",
             "required": false,
             "type": "checkbox",
             "repeatable": false
