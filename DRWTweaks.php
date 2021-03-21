@@ -96,9 +96,11 @@ class DRWTweaks extends AbstractExternalModule
                                 destination = $('#questiontable').find('tr:last').find('td:first');
                             }
                             $('#MCRI_DRWTweaks_Div').prependTo(destination).css('display', 'inline-block');
-                            if ($('img[src$="balloon_left_bw2.gif"]').filter(":visible").length === 0) {
-                                $('#MCRI_DRWTweaks_Button').prop('disabled', true);
-                            }
+                            setTimeout(function() {
+                                if ($('img[src$="balloon_left_bw2.gif"]').filter(":visible").length === 0) {
+                                    $('#MCRI_DRWTweaks_Button').prop('disabled', true);
+                                }
+                            }, 1000);
                         });
                         
                         var ajaxQueue = $({});
