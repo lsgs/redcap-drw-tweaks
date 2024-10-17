@@ -38,6 +38,7 @@ class DRWTweaks extends AbstractExternalModule
         }
 
         protected function includeIfEnabled(string $tweakRef) {
+            if (!defined('USERID') || !defined('PROJECT_ID')) return; // tweaks only apply in authenticated project conext 
             $functionDisabled = (bool)$this->getProjectSetting('disable-'.$tweakRef);
             if (!$functionDisabled) { 
                 $tweakFunction = static::$TweakMap[$tweakRef];
