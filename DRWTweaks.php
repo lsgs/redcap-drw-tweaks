@@ -9,26 +9,44 @@ use ExternalModules\AbstractExternalModule;
 
 class DRWTweaks extends AbstractExternalModule
 {
+        protected static $TweakMap = array(
+            'verify-all' => 'verifyAllTweak',
+            'csv-export' => 'csvExportTweak',
+            'extended-user-list' => 'extendedUserListTweak'
+        );
 
         public function redcap_every_page_before_render($project_id) {
-                if (PAGE=='DataQuality/resolve_csv_export.php'
-                    && version_compare(REDCAP_VERSION, '9.5.1')<0) {
-                        $functionDisabled = (bool)$this->getProjectSetting('disable-csv-export');
-                        if (!$functionDisabled) { $this->csvExportTweak(); }
-                }
+            if (PAGE=='DataQuality/resolve_csv_export.php' && version_compare(REDCAP_VERSION, '9.5.1')<0) {
+                $this->includeIfEnabled('csv-export');
+            }
         }
 
         public function redcap_data_entry_form_top($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance) {
-                global $data_resolution_enabled, $user_rights;
-                if ($data_resolution_enabled=='2' && $user_rights['data_quality_resolution']>2) {
-                        $functionDisabled = (bool)$this->getProjectSetting('disable-verify-all');
-                        if (!$functionDisabled) { $this->verifyAllTweak($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance); }
-                }
-        }
-        
-        protected function verifyAllTweak($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance) {
-                global $lang;
+            global $data_resolution_enabled, $user_rights;
+            if ($data_resolution_enabled=='2' && $user_rights['data_quality_resolution']>2) {
                 $this->initializeJavascriptModuleObject();
+                $this->includeIfEnabled('verify-all');
+                $this->includeIfEnabled('extended-user-list');
+            }
+        }
+
+        public function redcap_every_page_top($project_id) {
+            if (PAGE=='DataQuality/resolve.php') {
+                $this->initializeJavascriptModuleObject();
+                $this->includeIfEnabled('extended-user-list');
+            }
+        }
+
+        protected function includeIfEnabled(string $tweakRef) {
+            $functionDisabled = (bool)$this->getProjectSetting('disable-'.$tweakRef);
+            if (!$functionDisabled) { 
+                $tweakFunction = static::$TweakMap[$tweakRef];
+                $this->$tweakFunction(); 
+            }
+        }
+
+        protected function verifyAllTweak() {
+                global $lang;
                 ?>
                 <style type="text/css">
                     #__SUBMITBUTTONS__-tr { vertical-align: top; }
@@ -39,12 +57,13 @@ class DRWTweaks extends AbstractExternalModule
                         <span style="vertical-align:middle;"><i class="fas fa-comments"></i>&nbsp;<?php echo $lang['dataqueries_137'];?>&nbsp;<i class="fas fa-cube"></i></span>
                     </div>
                     <div>
-                        <button class="btn btn-sm btn-defaultrc" id="MCRI_DRWTweaks_Button" onclick="ExternalModules.MCRI.DRWTweaks.verify();return false;"><span style="color:green;"><i class="fas fa-check-circle"></i>&nbsp;Verify all fields</span></button>
+                        <button class="btn btn-sm btn-defaultrc" id="MCRI_DRWTweaks_Button" onclick="<?=$this->getJavascriptModuleObjectName()?>.verify();return false;"><span style="color:green;"><i class="fas fa-check-circle"></i>&nbsp;Verify all fields</span></button>
                     </div>
                 </div>
                 <script type="text/javascript">
                     (function(){
-                        ExternalModules.MCRI.DRWTweaks.verify = function() {
+                        let module = <?=$this->getJavascriptModuleObjectName()?>;
+                        module.verify = function() {
                             var urlParams = new URLSearchParams(window.location.search);
                             var event_id = urlParams.get('event_id');
                             var record = urlParams.get('id');
@@ -163,5 +182,97 @@ class DRWTweaks extends AbstractExternalModule
                         $this->exitAfterHook(); // do not continue with the built-in csv download!
                         print addBOMtoUTF8($csv);
                 }
+        }
+
+        protected function extendedUserListTweak() {
+            // read list of users that have "respond" permission 
+            // - in record context (on form) reset assign-to-user list to users that can acceess the *record's* dag
+            // - on resolve page reset assign-to-user list to users that can acceess the *record's* dag
+            global $Proj,$user_rights;
+
+            $dags = \REDCap::getGroupNames(true);
+            if (empty($dags)) return; // no dags so all users may access record
+
+            $dagSwitcherAccess = array();
+            $dagdrwUsers = array();
+            $allRights = \REDCap::getUserRights();
+            
+            if (isset($_GET['id'])) {
+                $rec = \REDCap::getData(array(
+                    'return_format' =>'json-array',
+                    'records' => $_GET['id'],
+                    'fields' => $Proj->table_pk,
+                    'exportDataAccessGroups' => true
+                ));
+
+                if (isset($rec[0]['redcap_data_access_group']) && !empty($rec[0]['redcap_data_access_group'])) {
+                    $group_id = array_search($rec[0]['redcap_data_access_group'], $dags);
+                } else {
+                    $group_id = null;
+                }
+            } else {
+                $group_id = $allRights[USERID]['group_id'];
+            }
+
+
+            // read the users that have dag access via dag switcher 
+            $params = array(PROJECT_ID, $group_id);
+            $sql = "select distinct username from redcap_data_access_groups_users where project_id=? and (group_id is null or group_id=?)";
+            $q = $this->query($sql, $params);
+            
+            while ($row = $q->fetch_assoc($q)) {
+                $dagSwitcherAccess[] = $row['username'];
+            }
+
+            // read the project user info 
+            $params = array(PROJECT_ID);
+            $sql = "select ui.ui_id, ur.username, trim(concat(ui.user_firstname, ' ', ui.user_lastname)) as fullname, super_user
+                    from redcap_user_rights ur 
+                    inner join redcap_user_information ui on ur.username=ui.username
+                    where ur.project_id=?
+                    order by fullname";
+            $q = $this->query($sql, $params);
+            
+            while ($row = $q->fetch_assoc($q)) {
+                $username = $row['username'];
+
+                $userHasRights = ($allRights[$username]['data_quality_resolution'] > 1);
+                $userInRecDag = ($allRights[$username]['group_id']==$group_id);
+                $userNoCurrentDag = empty($allRights[$username]['group_id']);
+                $userCanSwitch = in_array($username, $dagSwitcherAccess);
+
+                if (($userHasRights && ($userInRecDag || $userNoCurrentDag || $userCanSwitch)) || $row['super_user']==1) {
+                    $userObj = new \stdClass();
+                    foreach (array('ui_id','username','fullname') as $prop) {
+                        $userObj->$prop = $row[$prop];
+                    }
+                    $dagdrwUsers[] = $userObj;
+                }
+            }
+            ?>
+            <script type="text/javascript">
+                (function(){
+                    let module = <?=$this->getJavascriptModuleObjectName()?>;
+                    module.dagdrwUsers = JSON.parse('<?=\js_escape(\json_encode($dagdrwUsers))?>');
+                    module.drwDialogOpen = function() {
+                        let userSelect = $('#dc-assigned_user_id');
+                        let current = $(userSelect).val();
+                        let defaultList = $(userSelect).find('option').not(':first');
+                        $(defaultList).remove();
+                        module.dagdrwUsers.forEach(user => {
+                            $(userSelect).append($("<option/>", {
+                                value: user.ui_id, text: user.username+' ('+user.fullname+')'
+                            }));
+                        });
+                        $(userSelect).val(current);
+                    };
+                    $('body').on('dialogopen', function(event){
+                        if(event.target.id=='data_resolution') {
+                            module.drwDialogOpen();
+                        }
+                    });
+                })();
+            </script>
+            <?php
         }
 }

@@ -3,24 +3,23 @@
 **  REDCap is only available through a license agreement with Vanderbilt University
 ******************************************************************************************/
 
-if (version_compare(REDCAP_VERSION, '10.0.1')<0) {
-		require_once APP_PATH_DOCROOT . 'ProjectGeneral/math_functions.php'; // from 10.0.1 these functions are in init_functions.php which is included on init
-}
-
-// namespace MCRI\DRWTweaks; // best not to do this so do not have to prepend \ to all class references in methods here
+namespace MCRI\DRWTweaks;
 
 /**
  * DATA QUALITY - tweaked!
  */
 class DataQualityTweaked extends \DataQuality
 {
+    protected $dag_records = array();
+    protected $rules = array();
+    
 	public function renderResolutionTable($issueStatusType='', $fieldRuleFilter='', $event_id='', $group_id='', $assigned_user_id='', $returnCSV=false)
 	{
                 if (!$returnCSV) return false;
                 
 		global $Proj, $lang, $user_rights, $longitudinal;
 		// Increase memory limit in case needed for lots of output
-		System::increaseMemory(2048);
+		\System::increaseMemory(2048);
 		// Set max comment length to display in table
 		$maxCommentLen = 1000; // 100;
 		// Create array to store all fields involved for this status (key=field, value=count)
@@ -32,7 +31,7 @@ class DataQualityTweaked extends \DataQuality
 		// Load the DQ custom rules
 		$this->loadRules();
 		// Check if any DAGs exist. If so, create a new column in the table for each DAG.
-		$dags = REDCap::getGroupNames(true); // $Proj->getGroups();
+		$dags = \REDCap::getGroupNames(true); // $Proj->getGroups();
 		// Validate group_id input
 		if (!isset($dags[$group_id])) $group_id = '';
 		// Load array of records as key with their corresponding DAG as value
@@ -88,7 +87,7 @@ class DataQualityTweaked extends \DataQuality
                         $resData[0][] = 'redcap_data_access_group';
                 }
                 if ($longitudinal) {
-                        $event_names = REDCap::getEventNames(true);
+                        $event_names = \REDCap::getEventNames(true);
                         $resData[0][] = 'redcap_event_name';
                 }
                 $resData[0][] = 'instrument';
@@ -120,13 +119,13 @@ class DataQualityTweaked extends \DataQuality
 			$userAssignedItem = '-';
 			if ($attr['assigned_user_id'] != '') {
 				$user_assigned = $userids[$attr['assigned_user_id']] = (isset($userids[$attr['assigned_user_id']]))
-							? $userids[$attr['assigned_user_id']] : User::getUserInfoByUiid($attr['assigned_user_id']);
+							? $userids[$attr['assigned_user_id']] : \User::getUserInfoByUiid($attr['assigned_user_id']);
 				$userAssignedItem = $user_assigned['username'];
 			}
 			$user_first = $userids[$attr['user_id_first']] = (isset($userids[$attr['user_id_first']]))
-						? $userids[$attr['user_id_first']] : User::getUserInfoByUiid($attr['user_id_first']);
+						? $userids[$attr['user_id_first']] : \User::getUserInfoByUiid($attr['user_id_first']);
                         $user_last = $userids[$attr['user_id_last']] = (isset($userids[$attr['user_id_last']]))
-                                                ? $userids[$attr['user_id_last']] : User::getUserInfoByUiid($attr['user_id_last']);
+                                                ? $userids[$attr['user_id_last']] : \User::getUserInfoByUiid($attr['user_id_last']);
                         
 			// Display the field name (if field-level) or rule name (if rule-level)
 			if ($attr['field_name'] != '') {
@@ -248,9 +247,10 @@ class DataQualityTweaked extends \DataQuality
 		global $Proj;
 		// Check if any DAGs exist. If so, create a new column in the table for each DAG.
 		$dags = $Proj->getGroups();
+        $redcap_data = \REDCap::getDataTable();
 		// Get a list of records in all DAGs
-		$sql = "select record, value from redcap_data where project_id = " . PROJECT_ID . " and field_name = '__GROUPID__'";
-		$q = db_query($sql);
+		$sql = "select record, value from $redcap_data where project_id = ? and field_name = '__GROUPID__'";
+		$q = db_query($sql, [PROJECT_ID]);
 		while ($row = db_fetch_assoc($q))
 		{
 			$this_group_id = $row['value'];

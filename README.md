@@ -20,3 +20,6 @@ Columns contain multiple pieces of information:
 Each piece of information in a separate column:
 
 ![DRW Export Module](./drw-export-module.png)
+
+#### DAG Switcher
+Queries can be assigned to any user that may access the DAG (i.e. using DAG Switcher).

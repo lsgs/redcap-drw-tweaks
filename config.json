@@ -1,8 +1,6 @@
 {
     "name": "Data Resolution Workflow Tweaks",
-
     "namespace": "MCRI\\DRWTweaks",
-
     "authors": [
         {
             "name": "Luke Stevens",
@@ -10,22 +8,8 @@
             "institution": "Murdoch Children's Research Institute"
         }
     ],
-
-    "description": "Provides some enhancements to REDCap's Data Resolution Workflow functionality, namely: <ul><li>Adds a button to data entry forms that will do the \"verified value\" step for all fields not yet verified or queried.</li><li>CSV exports have all data in separate columns (rather than combining, for example, username and comments).</li></ul>",
-
-    "permissions": [
-        "redcap_data_entry_form_top",
-        "redcap_every_page_before_render"
-    ],
-
-    "enable-every-page-hooks-on-system-pages": false,
-
-    "links": {
-    },
-
-    "system-settings": [
-    ],
-
+    "description": "Provides some enhancements to REDCap's Data Resolution Workflow functionality, namely: <ul><li>Adds a button to data entry forms that will do the \"verified value\" step for all fields not yet verified or queried.</li><li>CSV exports have all data in separate columns (rather than combining, for example, username and comments).</li><li>Queries can be assigned to any user that may access the DAG (i.e. using DAG Switcher).</li></ul>",
+    "framework-version": 15,
     "project-settings": [
         {
             "key": "disable-verify-all",
@@ -37,6 +21,13 @@
         {
             "key": "disable-csv-export",
             "name": "Disable CSV export alterations<br>(This tweak has no effect from REDCap v9.5.1 when the separation of data into distinct columns was implemented as standard behaviour.)",
+            "required": false,
+            "type": "checkbox",
+            "repeatable": false
+        },
+        {
+            "key": "disable-extended-user-list",
+            "name": "Disable the addition of all DAG-associated users to the list of users to which a query may be assigned",
             "required": false,
             "type": "checkbox",
             "repeatable": false
