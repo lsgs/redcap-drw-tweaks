@@ -10,32 +10,32 @@ use ExternalModules\AbstractExternalModule;
 class DRWTweaks extends AbstractExternalModule
 {
         protected static $TweakMap = array(
-            'verify-all' => 'verifyAllTweak',
-            'csv-export' => 'csvExportTweak',
-            'extended-user-list' => 'extendedUserListTweak'
+            'verify-all' => 'verifyAllTweak'//,
+//            'csv-export' => 'csvExportTweak',
+//            'extended-user-list' => 'extendedUserListTweak'
         );
 
-        public function redcap_every_page_before_render($project_id) {
-            if (PAGE=='DataQuality/resolve_csv_export.php' && version_compare(REDCAP_VERSION, '9.5.1')<0) {
-                $this->includeIfEnabled('csv-export');
-            }
-        }
+//        public function redcap_every_page_before_render($project_id) {
+//            if (PAGE=='DataQuality/resolve_csv_export.php' && version_compare(REDCAP_VERSION, '9.5.1')<0) {
+//                $this->includeIfEnabled('csv-export');
+//            }
+//        }
 
         public function redcap_data_entry_form_top($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance) {
             global $data_resolution_enabled, $user_rights;
             if ($data_resolution_enabled=='2' && $user_rights['data_quality_resolution']>2) {
                 $this->initializeJavascriptModuleObject();
                 $this->includeIfEnabled('verify-all');
-                $this->includeIfEnabled('extended-user-list');
+//                $this->includeIfEnabled('extended-user-list');
             }
         }
 
-        public function redcap_every_page_top($project_id) {
-            if (PAGE=='DataQuality/resolve.php') {
-                $this->initializeJavascriptModuleObject();
-                $this->includeIfEnabled('extended-user-list');
-            }
-        }
+//        public function redcap_every_page_top($project_id) {
+//            if (PAGE=='DataQuality/resolve.php') {
+//                $this->initializeJavascriptModuleObject();
+//                $this->includeIfEnabled('extended-user-list');
+//            }
+//        }
 
         protected function includeIfEnabled(string $tweakRef) {
             if (!defined('USERID') || !defined('PROJECT_ID')) return; // tweaks only apply in authenticated project conext 
@@ -186,6 +186,8 @@ class DRWTweaks extends AbstractExternalModule
         }
 
         protected function extendedUserListTweak() {
+            if (version_compare(REDCAP_VERSION, '9.5.1')>=0) { return; }
+            
             // read list of users that have "respond" permission 
             // - in record context (on form) reset assign-to-user list to users that can acceess the *record's* dag
             // - on resolve page reset assign-to-user list to users that can acceess the *record's* dag
